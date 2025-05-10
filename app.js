@@ -1,11 +1,13 @@
 const express = require('express');
-const mysql = require('mysql2/promise');
 const path = require('path');
 const session = require('express-session');
 const app = express();
 
+// Import db pool từ file cấu hình
+const pool = require('./config/database');
+
 // Import models
-const Search = require('./models/Search'); // Thêm model Search
+const Search = require('./models/Search');
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
@@ -22,17 +24,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 // View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-
-// MySQL connection pool
-const pool = mysql.createPool({
-    host: '127.0.0.1',
-    user: 'root',
-    password: 'admin',
-    database: 'social_media_web',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
 
 // Middleware to check authentication
 const isAuthenticated = (req, res, next) => {
@@ -70,7 +61,34 @@ app.get('/', isAuthenticated, async (req, res) => {
     }
 });
 
-// Route tìm kiếm
+// Route tìm kiếm người dùng
+app.get('/search-user', isAuthenticated, async (req, res) => {
+    try {
+        const { username } = req.query;
+        
+        // Nếu không có tham số username, hiển thị trang tìm kiếm trống
+        if (!username) {
+            return res.render('search-results', { 
+                searchQuery: '', 
+                searchResult: undefined 
+            });
+        }
+        
+        // Sử dụng Search model để tìm kiếm người dùng
+        const searchResult = await Search.findUserByUsername(username);
+        
+        // Render trang kết quả tìm kiếm
+        res.render('search-results', { 
+            searchQuery: username, 
+            searchResult: searchResult 
+        });
+    } catch (error) {
+        console.error('Lỗi tìm kiếm người dùng:', error);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Route tìm kiếm cũ (giữ lại để tương thích)
 app.get('/search', isAuthenticated, async (req, res) => {
     try {
         const { username } = req.query; // Lấy username từ query string
