@@ -1,6 +1,8 @@
 # Social Media Web
 ![image](https://github.com/user-attachments/assets/39c1084a-b49c-4292-840f-ed82061336b2)
-![image](https://github.com/user-attachments/assets/27a0da14-e111-429d-ac53-5dcf94a36033)\
+
+![image](https://github.com/user-attachments/assets/27a0da14-e111-429d-ac53-5dcf94a36033)
+
 ![image](https://github.com/user-attachments/assets/19653622-86e8-4246-b2f3-18e2bfef1fd5)
 
 
