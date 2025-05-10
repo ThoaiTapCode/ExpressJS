@@ -4,6 +4,9 @@ const path = require('path');
 const session = require('express-session');
 const app = express();
 
+// Import models
+const Search = require('./models/Search'); // Thêm model Search
+
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -63,6 +66,44 @@ app.get('/', isAuthenticated, async (req, res) => {
         res.render('index', { posts });
     } catch (error) {
         console.error(error);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Route tìm kiếm
+app.get('/search', isAuthenticated, async (req, res) => {
+    try {
+        const { username } = req.query; // Lấy username từ query string
+
+        // Lấy danh sách bài viết để hiển thị
+        const [posts] = await pool.query(`
+            SELECT posts.*, users.username, users.avatar_url 
+            FROM posts 
+            JOIN users ON posts.user_id = users.id 
+            ORDER BY posts.created_at DESC
+        `);
+        // Lấy bình luận cho từng bài viết
+        for (let post of posts) {
+            const [comments] = await pool.query(`
+                SELECT comments.*, users.username, users.avatar_url
+                FROM comments
+                JOIN users ON comments.user_id = users.id
+                WHERE comments.post_id = ?
+                ORDER BY comments.created_at ASC
+            `, [post.id]);
+            post.comments_data = comments;
+        }
+
+        // Nếu không có username trong query, không hiển thị kết quả tìm kiếm
+        if (!username) {
+            return res.render('index', { posts, searchResult: null });
+        }
+
+        // Sử dụng Search model để tìm kiếm người dùng
+        const searchResult = await Search.findUserByUsername(username);
+        res.render('index', { posts, searchResult });
+    } catch (error) {
+        console.error('Lỗi tìm kiếm:', error);
         res.status(500).send('Server Error');
     }
 });
